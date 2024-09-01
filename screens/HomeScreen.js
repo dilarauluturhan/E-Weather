@@ -26,7 +26,7 @@ export default function HomeScreen() {
 
   const formatDate = (dateString) => {
     const [year, month, day] = dateString.split("-");
-    return `${day}-${month}-${year}`;
+    return `${day}/${month}/${year}`;
   };
 
   // kullanıcının girdiği şehir adıyla hava durumu apisini aldım
@@ -92,7 +92,9 @@ export default function HomeScreen() {
               <Text style={styles.forecastText}>
                 Min: {item.day.mintemp_c}°C
               </Text>
-              <Text style={styles.forecastText}>{item.day.condition.text}</Text>
+              <Text style={styles.forecastCondition}>
+                {item.day.condition.text}
+              </Text>
             </View>
           )}
         />
@@ -171,8 +173,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
-    marginBottom: 16,
-    marginTop: 16,
+    marginBottom: 12,
+    marginTop: 10,
   },
   forecastDate: {
     fontSize: 18,
@@ -183,5 +185,10 @@ const styles = StyleSheet.create({
   forecastText: {
     fontSize: 16,
     color: "#fff",
+  },
+  forecastCondition: {
+    fontSize: 16,
+    color: "#fff",
+    fontWeight: "bold",
   },
 });
