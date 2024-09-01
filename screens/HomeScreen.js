@@ -1,143 +1,66 @@
 import {
   View,
   Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  SafeAreaView,
   TextInput,
-  TouchableOpacity,
+  Button,
+  StyleSheet,
+  FlatList,
 } from "react-native";
-import React, { useCallback, useState } from "react";
-import { StatusBar } from "expo-status-bar";
-import { theme } from "../theme";
-import { debounce } from "lodash";
-import { searchLocation, getWeatherForecast } from "../api/weather";
+import React, { useState } from "react";
+import { getWeatherForecast } from "../api/weather";
 
 export default function HomeScreen() {
   const [cityName, setCityName] = useState("");
-  const [location, setLocation] = useState([]);
+  const [weatherData, setWeatherData] = useState(null);
+  const [forecastData, setForecastData] = useState([]);
 
-  const handleLocation = (loc) => {
-    console.log("location:", loc);
-    setLocation([]);
-    getWeatherForecast({
-      cityName: loc.name,
-      days: "7",
-    }).then((data) => {
-      console.log("got forecast", data);
-    });
-  };
-
-  const handleSearch = (value) => {
-    if (value.length > 2) {
-      searchLocation({ cityName: value }).then((data) => {
-        setLocation(data);
-      });
+  const handleSearch = async () => {
+    try {
+      const params = {
+        cityName: cityName,
+        days: 7,
+        alert: "no",
+      };
+      const data = await getWeatherForecast(params);
+      setWeatherData(data.current);
+      setForecastData(data.forecast.forecastday);
+    } catch (error) {
+      console.log("Arama hatası:", error);
     }
   };
 
-  const handleTextDebounce = useCallback(debounce(handleSearch, 1200), []);
-
   return (
     <View style={styles.container}>
-      <StatusBar style="auto" />
-      {/* <Image
-        blurRadius={20}
-        style={styles.imageWrap}
-        source={require("../assets/bg.jpeg")}
-      /> */}
-      <SafeAreaView>
-        <Text>E-Weather</Text>
-        <View>
-          <View>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter city name"
-              value={cityName}
-              onChange={(text) => setCityName(text)}
-              onChangeText={handleTextDebounce}
-            />
-          </View>
-          {location.length > 0 ? (
-            <View>
-              {location.map((loc, i) => {
-                return (
-                  <TouchableOpacity onPress={() => handleLocation(loc)} key={i}>
-                    <Text>
-                      {loc?.name}, {loc?.country}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ) : null}
-        </View>
+      <TextInput
+        value={cityName}
+        onChangeText={setCityName}
+        style={styles.input}
+        placeholder="Şehir Adı Giriniz"
+      />
+      <Button title="Ara" onPress={handleSearch} />
 
-        {/* forecast section */}
-        <View>
-          <Text>
-            London,
-            <Text>United Kingdom</Text>
-          </Text>
-          {/* degree */}
-          <View>
-            <Text>23&#176;</Text>
-            <Text>Partly Cloudy</Text>
-          </View>
-          {/* other stats */}
-          <View>
-            <Text>22km</Text>
-          </View>
-          <View>
-            <Text>22%</Text>
-          </View>
-          <View>
-            <Text>6:05 AM</Text>
-          </View>
+      {weatherData && (
+        <View style={styles.currentWeather}>
+          <Text>Şu anki hava durumu cnmsss:</Text>
+          <Text>{weatherData.temp_c}°C</Text>
+          <Text>{weatherData.condition.text}</Text>
         </View>
+      )}
 
-        {/* forecast next days */}
-        <View>
-          <View>
-            <Text>Daily Forecast</Text>
-          </View>
-          <ScrollView
-            horizantal
-            contentContainerStyle={{ paddingHorizontal: 15 }}
-            showsHorizontalScrollIndicator={false}
-          >
-            <View>
-              <Text>Monday</Text>
-              <Text>23&#176;</Text>
+      {forecastData.length > 0 && (
+        <FlatList
+          data={forecastData}
+          keyExtractor={(item) => item.date}
+          renderItem={({ item }) => (
+            <View style={styles.forecastItem}>
+              <Text>{item.date}</Text>
+              <Text>Max: {item.day.maxtemp_c}°C</Text>
+              <Text>Min: {item.day.mintemp_c}°C</Text>
+              <Text>{item.day.condition.text}</Text>
             </View>
-            <View>
-              <Text>Monday</Text>
-              <Text>23&#176;</Text>
-            </View>
-            <View>
-              <Text>Monday</Text>
-              <Text>23&#176;</Text>
-            </View>
-            <View>
-              <Text>Monday</Text>
-              <Text>23&#176;</Text>
-            </View>
-            <View>
-              <Text>Monday</Text>
-              <Text>23&#176;</Text>
-            </View>
-            <View>
-              <Text>Monday</Text>
-              <Text>23&#176;</Text>
-            </View>
-            <View>
-              <Text>Monday</Text>
-              <Text>23&#176;</Text>
-            </View>
-          </ScrollView>
-        </View>
-      </SafeAreaView>
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -145,25 +68,23 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "flex-start",
-    paddingVertical: 56,
-    paddingHorizontal: 20,
-  },
-  imageWrap: {
-    height: "100%",
-    width: "100%",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
+    padding: 16,
+    backgroundColor: "#fff",
   },
   input: {
-    height: 40,
-    borderColor: "#999",
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    backgroundColor: "white",
+    borderColor: "#ccc",
+    padding: 8,
+    marginBottom: 16,
+    borderRadius: 4,
+  },
+  currentWeather: {
+    marginBottom: 16,
+  },
+  forecastItem: {
+    padding: 8,
+    marginVertical: 4,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 4,
   },
 });
